@@ -10,7 +10,7 @@ STYLE_GUIDE_FILE = "style_guide.txt"
 # --- 1. 설정 및 초기화 ---
 
 # 페이지 제목 설정
-st.set_page_config(page_title="팀 번역기", page_icon="🌐", layout="wide")
+st.set_page_config(page_title="조직 번역기", page_icon="🌐", layout="wide")
 st.title("🌐 자유공산주의전선 번역기")
 
 # OpenAI 클라이언트 초기화 (st.secrets 사용으로 보안 강화)
