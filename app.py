@@ -182,17 +182,17 @@ with st.sidebar:
                 st.error(f"파일 처리 중 오류가 발생했습니다: {e}")
 
     with tab3:
-     edited_notepad = st.text_area(
-        "자유롭게 메모를 남겨주세요.",
-        value=st.session_state.notepad_content,
-        height=250,
-        key="notepad_editor",
-        label_visibility="collapsed"
-    )
-    if st.button("메모 저장", key="save_notepad"):
-        save_notepad(edited_notepad)
-        st.session_state.notepad_content = edited_notepad
-        st.success("메모가 저장되었습니다!")
+        edited_notepad = st.text_area(
+            "자유롭게 메모를 남겨주세요.",
+            value=st.session_state.notepad_content,
+            height=250,
+            key="notepad_editor",
+            label_visibility="collapsed"
+        )
+        if st.button("메모 저장", key="save_notepad"):
+            save_notepad(edited_notepad)
+            st.session_state.notepad_content = edited_notepad
+            st.success("메모가 저장되었습니다!")
 
 # 메인 화면: 번역기
 col1, col2 = st.columns(2)
