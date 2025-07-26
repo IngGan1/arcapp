@@ -144,4 +144,4 @@ with col2:
         else:
             st.warning("번역할 내용을 입력해주세요.")
     
-    st.text_area("번역 결과", value=st.session_state.korean_translation, height=300, disabled=True, label_visibility="collapsed")
+    st.text_area("번역 결과", value=st.session_state.korean_translation, height=300, label_visibility="collapsed")
