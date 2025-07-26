@@ -27,12 +27,12 @@ except Exception:
 def load_glossary():
     if not os.path.exists(GLOSSARY_FILE):
         # 파일이 없으면 기본 헤더로 생성
-        pd.DataFrame(columns=["English", "Korean"]).to_csv(GLOSSARY_FILE, index=False)
+        pd.DataFrame(columns=["영어", "한글"]).to_csv(GLOSSARY_FILE, index=False, encoding='utf-8-sig')
     return pd.read_csv(GLOSSARY_FILE)
 
 # 단어장 저장
 def save_glossary(df):
-    df.to_csv(GLOSSARY_FILE, index=False)
+    df.to_csv(GLOSSARY_FILE, index=False, encoding='utf-8-sig')
 
 # 스타일 가이드 로드
 def load_style_guide():
@@ -56,7 +56,8 @@ def translate_with_openai(text: str, glossary: pd.DataFrame, style_guide: str) -
         return ""
 
     # 단어장을 프롬프트에 포함시킬 형태로 변환
-    glossary_text = "\n".join([f"- {row['English']}: {row['Korean']}" for index, row in glossary.iterrows()])
+    # 비어있는 행은 건너뛰도록 안정성 추가
+    glossary_text = "\n".join([f"- {row['영어']}: {row['한글']}" for index, row in glossary.iterrows() if pd.notna(row['영어']) and pd.notna(row['한글'])])
 
     # 시스템 프롬프트를 동적으로 구성
     system_prompt = f"""
@@ -64,12 +65,13 @@ You are an expert translator. Your only job is to translate the given English te
 Your output must be ONLY the translated text itself, without any additional phrases, explanations, or greetings.
 
 Follow these rules strictly:
-1.  **Translation Style**: Adhere to the following style guide.
+1.  **Structure Preservation**: Preserve the original paragraph structure. If the input text has multiple paragraphs (separated by newlines), the translated output MUST also have the same number of paragraphs.
+2.  **Translation Style**: Adhere to the following style guide.
     --- STYLE GUIDE ---
     {style_guide}
     --- END STYLE GUIDE ---
 
-2.  **Glossary**: You MUST use the translations provided in this glossary for the specified terms.
+3.  **Glossary**: You MUST use the translations provided in this glossary for the specified terms.
     --- GLOSSARY ---
     {glossary_text if glossary_text else "No specific terms provided."}
     --- END GLOSSARY ---
@@ -119,14 +121,10 @@ with st.sidebar:
     with tab2:
         edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True, key="glossary_editor", height=300)
         if st.button("단어장 저장", key="save_glossary"):
-            # Ensure columns exist before dropping NA
-            if '영어' in edited_df.columns and '한글' in edited_df.columns:
-                edited_df.dropna(subset=['영어', '한글'], how='all', inplace=True)
-            else:
-                # Handle case where table is empty or columns are missing
-                edited_df = pd.DataFrame(columns=["영어", "한글"])
-            save_glossary(edited_df)
-            st.session_state.glossary_df = edited_df
+            # 사용자가 추가한 빈 행(모든 값이 NA)을 안전하게 제거
+            cleaned_df = edited_df.dropna(subset=['영어', '한글'], how='all').copy()
+            save_glossary(cleaned_df)
+            st.session_state.glossary_df = cleaned_df
             st.success("단어장이 저장되었습니다!")
 
 # 메인 화면: 번역기
@@ -146,4 +144,4 @@ with col2:
         else:
             st.warning("번역할 내용을 입력해주세요.")
     
-    st.markdown(f"<div style='height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'>{st.session_state.korean_translation}</div>", unsafe_allow_html=True)
+    st.text_area("번역 결과", value=st.session_state.korean_translation, height=300, disabled=True, label_visibility="collapsed")
