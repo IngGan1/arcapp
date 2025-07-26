@@ -120,7 +120,7 @@ with st.sidebar:
         edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True, key="glossary_editor", height=300)
         if st.button("단어장 저장", key="save_glossary"):
             # Ensure columns exist before dropping NA
-            if 'English' in edited_df.columns and 'Korean' in edited_df.columns:
+            if '영어' in edited_df.columns and '한국어' in edited_df.columns:
                 edited_df.dropna(subset=['영어', '한국어'], how='all', inplace=True)
             else:
                 # Handle case where table is empty or columns are missing
