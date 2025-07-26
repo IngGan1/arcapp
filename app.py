@@ -123,20 +123,24 @@ if 'korean_translation' not in st.session_state:
 with st.sidebar:
     st.header("⚙️ 조직 공유 문체, 단어")
 
-    # 탭을 사용하여 스타일 가이드와 단어장 분리
-    tab1, tab2, tab3= st.tabs(["✍️ 번역 문체 정의하기", "📖 공유 단어장", "📝 공용 메모장"])
-
-    with tab1:
+    # 문체 정의 영역
+    with st.expander("✍️ 번역 문체 정의하기", expanded=True):
         edited_style = st.text_area("번역 문체 지정", value=st.session_state.style_guide, height=300, key="style_editor")
         if st.button("번역 문체 저장", key="save_style_guide"):
             save_style_guide(edited_style)
             st.session_state.style_guide = edited_style
-            st.success("번역 문체가! 저장되었습니다!")
+            st.success("번역 문체가 저장되었습니다!")
 
-    with tab2:
-        edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True, key="glossary_editor", height=300)
+    # 단어장 영역
+    with st.expander("📖 공유 단어장", expanded=False):
+        edited_df = st.data_editor(
+            st.session_state.glossary_df,
+            num_rows="dynamic",
+            use_container_width=True,
+            key="glossary_editor",
+            height=300
+        )
         if st.button("단어장 저장", key="save_glossary"):
-            # 사용자가 추가한 빈 행(모든 값이 NA)을 안전하게 제거
             cleaned_df = edited_df.dropna(subset=['영어', '한글'], how='all').copy()
             save_glossary(cleaned_df)
             st.session_state.glossary_df = cleaned_df
@@ -152,18 +156,14 @@ with st.sidebar:
 
         if uploaded_file is not None:
             try:
-                # 업로드된 CSV 파일을 DataFrame으로 읽기
                 new_df = pd.read_csv(uploaded_file)
 
-                # 필수 열 확인
                 if '영어' not in new_df.columns or '한글' not in new_df.columns:
                     st.error("오류: CSV 파일에 '영어'와 '한글' 열이 모두 필요합니다.")
                 else:
-                    # 현재 단어장 로드 및 중복 체크를 위한 영어 단어 집합 생성
                     current_df = st.session_state.glossary_df.copy()
                     existing_words = set(current_df['영어'].str.lower().dropna())
 
-                    # 업로드된 데이터에서 유효하고 중복되지 않는 단어만 필터링
                     new_df.dropna(subset=['영어', '한글'], how='any', inplace=True)
                     unique_new_rows = new_df[~new_df['영어'].str.lower().isin(existing_words)]
 
@@ -181,7 +181,8 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"파일 처리 중 오류가 발생했습니다: {e}")
 
-    with tab3:
+    # 메모장 영역
+    with st.expander("📝 공용 메모장", expanded=False):
         edited_notepad = st.text_area(
             "자유롭게 메모를 남겨주세요.",
             value=st.session_state.notepad_content,
