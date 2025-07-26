@@ -1,12 +1,10 @@
 import streamlit as st
 from openai import OpenAI
 import pandas as pd
-import os
-
-# --- 0. 상수 및 파일 경로 정의 ---
-GLOSSARY_FILE = "glossary.csv"
-STYLE_GUIDE_FILE = "style_guide.txt"
-NOTEPAD_FILE = "notepad.txt"
+from utils import (
+    load_glossary, save_glossary,
+    load_style_guide, save_style_guide
+)
 
 # --- 1. 설정 및 초기화 ---
 
@@ -21,46 +19,7 @@ except Exception:
     st.error("🚨 OpenAI API 키를 설정해주세요! `.streamlit/secrets.toml` 파일이 필요합니다.")
     st.stop()
 
-
-# --- 2. 헬퍼 함수 (단어장 및 스타일 가이드) ---
-
-# 단어장 로드
-def load_glossary():
-    if not os.path.exists(GLOSSARY_FILE):
-        # 파일이 없으면 기본 헤더로 생성
-        pd.DataFrame(columns=["영어", "한글"]).to_csv(GLOSSARY_FILE, index=False, encoding='utf-8-sig')
-    return pd.read_csv(GLOSSARY_FILE)
-
-# 단어장 저장
-def save_glossary(df):
-    df.to_csv(GLOSSARY_FILE, index=False, encoding='utf-8-sig')
-
-# 스타일 가이드 로드
-def load_style_guide():
-    if not os.path.exists(STYLE_GUIDE_FILE):
-        # 파일이 없으면 기본 내용으로 생성
-        default_style = "번역 스타일: 공식적이고 전문적인 톤을 유지하며, 문장은 명확하고 간결하게 작성합니다. 모든 번역은 존댓말을 사용합니다."
-        with open(STYLE_GUIDE_FILE, "w", encoding="utf-8") as f:
-            f.write(default_style)
-    with open(STYLE_GUIDE_FILE, "r", encoding="utf-8") as f:
-        return f.read()
-
-# 스타일 가이드 저장
-def save_style_guide(style_text):
-    with open(STYLE_GUIDE_FILE, "w", encoding="utf-8") as f:
-        f.write(style_text)
-
-# 공용 메모장 로드
-def load_notepad():
-    if not os.path.exists(NOTEPAD_FILE):
-        return "" # 파일이 없으면 빈 문자열 반환
-    with open(NOTEPAD_FILE, "r", encoding="utf-8") as f:
-        return f.read()
-
-# 공용 메모장 저장
-def save_notepad(content):
-    with open(NOTEPAD_FILE, "w", encoding="utf-8") as f:
-        f.write(content)
+# --- 2. 헬퍼 함수는 utils.py에서 import하여 사용 ---
 
 # --- 3. 핵심 번역 함수 ---
 
@@ -112,8 +71,6 @@ if 'glossary_df' not in st.session_state:
     st.session_state.glossary_df = load_glossary()
 if 'style_guide' not in st.session_state:
     st.session_state.style_guide = load_style_guide()
-if 'notepad_content' not in st.session_state:
-    st.session_state.notepad_content = load_notepad()
 if 'english_text' not in st.session_state:
     st.session_state.english_text = ""
 if 'korean_translation' not in st.session_state:
@@ -124,7 +81,7 @@ with st.sidebar:
     st.header("⚙️ 조직 공유 문체, 단어")
 
     # 탭을 사용하여 스타일 가이드와 단어장 분리
-    tab1, tab2, tab3= st.tabs(["✍️ 번역 문체 정의하기", "📖 공유 단어장", "📝 공용 메모장"])
+    tab1, tab2 = st.tabs(["✍️ 번역 문체 정의하기", "📖 공유 단어장"])
 
     with tab1:
         edited_style = st.text_area("번역 문체 지정", value=st.session_state.style_guide, height=300, key="style_editor")
@@ -180,19 +137,6 @@ with st.sidebar:
                         st.info(f"ℹ️ 추가할 새 단어가 없습니다. (총 {skipped_count}개 중복 제외)")
             except Exception as e:
                 st.error(f"파일 처리 중 오류가 발생했습니다: {e}")
-
-    with tab3:
-     edited_notepad = st.text_area(
-        "자유롭게 메모를 남겨주세요.",
-        value=st.session_state.notepad_content,
-        height=250,
-        key="notepad_editor",
-        label_visibility="collapsed"
-    )
-    if st.button("메모 저장", key="save_notepad"):
-        save_notepad(edited_notepad)
-        st.session_state.notepad_content = edited_notepad
-        st.success("메모가 저장되었습니다!")
 
 # 메인 화면: 번역기
 col1, col2 = st.columns(2)
