@@ -78,7 +78,7 @@ Follow these rules strictly:
     try:
         with st.spinner("AI가 번역 중입니다..."):
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": text}
