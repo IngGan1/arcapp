@@ -106,17 +106,19 @@ if 'korean_translation' not in st.session_state:
 with st.sidebar:
     st.header("⚙️ 팀 공유 설정")
 
-    with st.expander("✍️ 번역 스타일 가이드", expanded=True):
-        edited_style = st.text_area("팀의 번역 스타일을 정의하세요:", value=st.session_state.style_guide, height=150, key="style_editor")
-        if st.button("스타일 저장"):
+    # 탭을 사용하여 스타일 가이드와 단어장 분리
+    tab1, tab2 = st.tabs(["✍️ 번역 스타일 가이드", "📖 공유 단어장"])
+
+    with tab1:
+        edited_style = st.text_area("팀의 번역 스타일을 정의하세요:", value=st.session_state.style_guide, height=200, key="style_editor")
+        if st.button("스타일 저장", key="save_style_guide"):
             save_style_guide(edited_style)
             st.session_state.style_guide = edited_style
             st.success("스타일이 저장되었습니다!")
-with st.sidebar:
-    st.header("⚙️ 팀 공유 설정")
-    with st.expander("📖 공유 단어장", expanded=True):
+
+    with tab2:
         edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True, key="glossary_editor")
-        if st.button("단어장 저장"):
+        if st.button("단어장 저장", key="save_glossary"):
             # Ensure columns exist before dropping NA
             if 'English' in edited_df.columns and 'Korean' in edited_df.columns:
                 edited_df.dropna(subset=['English', 'Korean'], how='all', inplace=True)
