@@ -124,7 +124,7 @@ with st.sidebar:
     st.header("⚙️ 조직 공유 문체, 단어")
 
     # 탭을 사용하여 스타일 가이드와 단어장 분리
-    tab1, tab2 = st.tabs(["✍️ 번역 문체 정의하기", "📖 공유 단어장"])
+    tab1, tab2, tab3= st.tabs(["✍️ 번역 문체 정의하기", "📖 공유 단어장", "📝 공용 메모장"])
 
     with tab1:
         edited_style = st.text_area("번역 문체 지정", value=st.session_state.style_guide, height=300, key="style_editor")
@@ -181,9 +181,8 @@ with st.sidebar:
             except Exception as e:
                 st.error(f"파일 처리 중 오류가 발생했습니다: {e}")
 
-    st.divider()
-    st.header("📝 공용 메모장")
-    edited_notepad = st.text_area(
+    with tab3:
+     edited_notepad = st.text_area(
         "자유롭게 메모를 남겨주세요.",
         value=st.session_state.notepad_content,
         height=250,
