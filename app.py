@@ -112,7 +112,8 @@ with st.sidebar:
             save_style_guide(edited_style)
             st.session_state.style_guide = edited_style
             st.success("스타일이 저장되었습니다!")
-
+with st.sidebar:
+    st.header("⚙️ 팀 공유 설정")
     with st.expander("📖 공유 단어장", expanded=True):
         edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True, key="glossary_editor")
         if st.button("단어장 저장"):
