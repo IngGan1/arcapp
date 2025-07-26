@@ -6,6 +6,7 @@ import os
 # --- 0. 상수 및 파일 경로 정의 ---
 GLOSSARY_FILE = "glossary.csv"
 STYLE_GUIDE_FILE = "style_guide.txt"
+NOTEPAD_FILE = "notepad.txt"
 
 # --- 1. 설정 및 초기화 ---
 
@@ -48,6 +49,18 @@ def load_style_guide():
 def save_style_guide(style_text):
     with open(STYLE_GUIDE_FILE, "w", encoding="utf-8") as f:
         f.write(style_text)
+
+# 공용 메모장 로드
+def load_notepad():
+    if not os.path.exists(NOTEPAD_FILE):
+        return "" # 파일이 없으면 빈 문자열 반환
+    with open(NOTEPAD_FILE, "r", encoding="utf-8") as f:
+        return f.read()
+
+# 공용 메모장 저장
+def save_notepad(content):
+    with open(NOTEPAD_FILE, "w", encoding="utf-8") as f:
+        f.write(content)
 
 # --- 3. 핵심 번역 함수 ---
 
@@ -99,6 +112,8 @@ if 'glossary_df' not in st.session_state:
     st.session_state.glossary_df = load_glossary()
 if 'style_guide' not in st.session_state:
     st.session_state.style_guide = load_style_guide()
+if 'notepad_content' not in st.session_state:
+    st.session_state.notepad_content = load_notepad()
 if 'english_text' not in st.session_state:
     st.session_state.english_text = ""
 if 'korean_translation' not in st.session_state:
@@ -126,6 +141,59 @@ with st.sidebar:
             save_glossary(cleaned_df)
             st.session_state.glossary_df = cleaned_df
             st.success("단어장이 저장되었습니다!")
+
+        st.divider()
+        st.subheader("CSV 일괄 업로드")
+        uploaded_file = st.file_uploader(
+            "단어장 CSV 파일을 업로드하세요.",
+            type=['csv'],
+            help="파일은 '영어', '한글' 열(Column)을 포함해야 합니다."
+        )
+
+        if uploaded_file is not None:
+            try:
+                # 업로드된 CSV 파일을 DataFrame으로 읽기
+                new_df = pd.read_csv(uploaded_file)
+
+                # 필수 열 확인
+                if '영어' not in new_df.columns or '한글' not in new_df.columns:
+                    st.error("오류: CSV 파일에 '영어'와 '한글' 열이 모두 필요합니다.")
+                else:
+                    # 현재 단어장 로드 및 중복 체크를 위한 영어 단어 집합 생성
+                    current_df = st.session_state.glossary_df.copy()
+                    existing_words = set(current_df['영어'].str.lower().dropna())
+
+                    # 업로드된 데이터에서 유효하고 중복되지 않는 단어만 필터링
+                    new_df.dropna(subset=['영어', '한글'], how='any', inplace=True)
+                    unique_new_rows = new_df[~new_df['영어'].str.lower().isin(existing_words)]
+
+                    added_count = len(unique_new_rows)
+                    skipped_count = len(new_df) - added_count
+
+                    if added_count > 0:
+                        updated_df = pd.concat([current_df, unique_new_rows], ignore_index=True)
+                        save_glossary(updated_df)
+                        st.session_state.glossary_df = updated_df
+                        st.success(f"✅ {added_count}개의 새 단어를 추가했습니다. (중복 {skipped_count}개 제외)")
+                        st.rerun()
+                    else:
+                        st.info(f"ℹ️ 추가할 새 단어가 없습니다. (총 {skipped_count}개 중복 제외)")
+            except Exception as e:
+                st.error(f"파일 처리 중 오류가 발생했습니다: {e}")
+
+    st.divider()
+    st.header("📝 공용 메모장")
+    edited_notepad = st.text_area(
+        "자유롭게 메모를 남겨주세요.",
+        value=st.session_state.notepad_content,
+        height=250,
+        key="notepad_editor",
+        label_visibility="collapsed"
+    )
+    if st.button("메모 저장", key="save_notepad"):
+        save_notepad(edited_notepad)
+        st.session_state.notepad_content = edited_notepad
+        st.success("메모가 저장되었습니다!")
 
 # 메인 화면: 번역기
 col1, col2 = st.columns(2)
