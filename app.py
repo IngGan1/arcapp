@@ -97,13 +97,17 @@ if 'glossary_df' not in st.session_state:
     st.session_state.glossary_df = load_glossary()
 if 'style_guide' not in st.session_state:
     st.session_state.style_guide = load_style_guide()
+if 'english_text' not in st.session_state:
+    st.session_state.english_text = ""
+if 'korean_translation' not in st.session_state:
+    st.session_state.korean_translation = ""
 
 # 사이드바: 단어장 및 스타일 가이드 관리
 with st.sidebar:
     st.header("⚙️ 팀 공유 설정")
 
     with st.expander("✍️ 번역 스타일 가이드", expanded=True):
-        edited_style = st.text_area("팀의 번역 스타일을 정의하세요:", value=st.session_state.style_guide, height=150)
+        edited_style = st.text_area("팀의 번역 스타일을 정의하세요:", value=st.session_state.style_guide, height=150, key="style_editor")
         if st.button("스타일 저장"):
             save_style_guide(edited_style)
             st.session_state.style_guide = edited_style
@@ -111,9 +115,14 @@ with st.sidebar:
 
     with st.expander("📖 공유 단어장", expanded=True):
         st.info("아래 표에서 직접 단어를 수정, 추가, 삭제할 수 있습니다.")
-        edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True)
+        edited_df = st.data_editor(st.session_state.glossary_df, num_rows="dynamic", use_container_width=True, key="glossary_editor")
         if st.button("단어장 저장"):
-            edited_df.dropna(how='all', inplace=True)
+            # Ensure columns exist before dropping NA
+            if 'English' in edited_df.columns and 'Korean' in edited_df.columns:
+                edited_df.dropna(subset=['English', 'Korean'], how='all', inplace=True)
+            else:
+                # Handle case where table is empty or columns are missing
+                edited_df = pd.DataFrame(columns=["English", "Korean"])
             save_glossary(edited_df)
             st.session_state.glossary_df = edited_df
             st.success("단어장이 저장되었습니다!")
@@ -123,16 +132,16 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("📜 원문 (영어)")
-    english_text = st.text_area("번역할 영어 문장을 입력하세요:", height=300, placeholder="Enter English text here...", label_visibility="collapsed")
+    st.session_state.english_text = st.text_area("번역할 영어 문장을 입력하세요:", value=st.session_state.english_text, height=300, placeholder="Enter English text here...", label_visibility="collapsed")
 
 with col2:
     st.subheader("📖 번역 결과 (한국어)")
     if st.button("한글로 번역하기", type="primary", use_container_width=True):
-        if english_text:
-            korean_translation = translate_with_openai(english_text, st.session_state.glossary_df, st.session_state.style_guide)
-            if korean_translation:
-                st.markdown(f"<div style='height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'>{korean_translation}</div>", unsafe_allow_html=True)
+        if st.session_state.english_text:
+            translation_result = translate_with_openai(st.session_state.english_text, st.session_state.glossary_df, st.session_state.style_guide)
+            if translation_result:
+                st.session_state.korean_translation = translation_result
         else:
             st.warning("번역할 내용을 입력해주세요.")
-    else:
-        st.markdown(f"<div style='height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'></div>", unsafe_allow_html=True)
+    
+    st.markdown(f"<div style='height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;'>{st.session_state.korean_translation}</div>", unsafe_allow_html=True)
